@@ -6,7 +6,7 @@ EXPOSE 80
 EXPOSE 443
 
 
-COPY .git/refs/heads/master /app/githash
+COPY .git/refs/heads/main /app/githash
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
