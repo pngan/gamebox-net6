@@ -3,11 +3,50 @@
 @inject NavigationManager NavigationManager
 @implements IAsyncDisposable
 
-<PageTitle>Index</PageTitle>
+<PageTitle>Planning Poker</PageTitle>
+<style>
+    
 
+div.page-banner
+{
+    color: rebeccapurple;
+    font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: 40pt;
+}
+
+div.planning-poker-container {
+    background: #CCCCCC;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    justify-content: space-between;
+    row-gap: 20px;
+}
+
+label.game-code {
+    color: lightgoldenrodyellow;
+    font-size: 40pt;
+    font-family: Courier New, Courier, monospace;
+    font-weight:bolder;
+}
+
+</style>
+
+
+<div class="planning-poker-container">
+
+<div class="page-banner">
+    Welcome to Planning Poker
+</div>
+<div class="form-group">
+
+    <label>Game Code: </label>
+    <label class="game-code">@(_gameCode)</label>
+</div>
 <div class="form-group">
     <label>
-        User:
+        What is your Name?
         <input @bind="userInput" />
     </label>
 </div>
@@ -16,6 +55,12 @@
         Message:
         <input @bind="messageInput" size="50" />
     </label>
+</div>
+<div class="button-box">
+    <div class="grid-container">
+        <button class="grid-item" @onclick="GotoJoinAsPlayer">Join As Player</button>
+        <button class="grid-item" @onclick="GotoJoinAsSpectator">Join As Spectator</button>
+    </div>
 </div>
 <button @onclick="Send" disabled="@(!IsConnected)">Send</button>
 
@@ -28,14 +73,29 @@
     }
 </ul>
 
+</div>
+
 @code {
     private HubConnection? hubConnection;
     private List<string> messages = new List<string>();
     private string? userInput;
     private string? messageInput;
+    private string? _gameCode;
+
+
+    private async Task GotoJoinAsPlayer()
+    {
+        await Send();
+    }
+    private async Task GotoJoinAsSpectator()
+    {
+        await Send();
+    }
 
     protected override async Task OnInitializedAsync()
     {
+        _gameCode = "JDLR";
+
         hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/planningpokerhub"))
             .Build();
