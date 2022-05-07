@@ -95,7 +95,7 @@ label.game-code {
     protected override async Task OnInitializedAsync()
     {
         _gameCode = "JDLR";
-
+            
         hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/planningpokerhub"))
             .Build();
@@ -114,7 +114,7 @@ label.game-code {
     {
         if (hubConnection is not null)
         {
-            await hubConnection.SendAsync("SendMessage", userInput, messageInput);
+            await hubConnection.SendAsync("SendMessage", userInput, messageInput, _gameCode);
         }
     }
 

@@ -1,10 +1,33 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using gamebox.Server.HubHelpers;
+using Microsoft.AspNetCore.SignalR;
+
 namespace gamebox.Server.Hubs;
 
 public class PlanningPokerHub : Hub
 {
-    public async Task SendMessage(string user, string message)
+    private readonly IGameRepository _gameRepository;
+
+    public PlanningPokerHub(IGameRepository gameRepository)
     {
-        await Clients.All.SendAsync("ReceiveMessage", user, message);
+        _gameRepository = gameRepository;
+    }
+
+    public async Task SendMessage(string user, string message, string gameCode)
+    {
+        var isUserInGame = _gameRepository.IsUserInGame(user, gameCode);
+        if (!isUserInGame)
+        {
+            _gameRepository.AddUserToGame(user, gameCode);
+            await Groups.AddToGroupAsync(Context.ConnectionId, gameCode);
+        }
+
+        await Clients.Group(gameCode).SendAsync("ReceiveMessage", user, message);
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        var game = _gameRepository.GetGameByUser(Context.ConnectionId);
+        if (game is null) return;
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, game);
     }
 }

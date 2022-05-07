@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.ResponseCompression;
 using gamebox.Server.Hubs;
+using gamebox.Server.HubHelpers;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSignalR();
@@ -10,6 +11,7 @@ builder.Services.AddResponseCompression(opts =>
     opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
         new[] { "application/octet-stream" });
 });
+builder.Services.AddSingleton<IGameRepository, GameRepository>();
 
 var app = builder.Build();
 app.UseResponseCompression();
