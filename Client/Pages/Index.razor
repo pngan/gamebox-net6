@@ -7,7 +7,7 @@
 <PageTitle>Index</PageTitle>
 
 
-<h1>Choose Your Game!</h1>
+<h1>Choose Your Game</h1>
 <div class="button-box">
     <div class="grid-container">
         <button class="grid-item" @onclick="GotoPlanningPoker">Planning Poker</button>
@@ -36,7 +36,7 @@
     public string GitHash { get; set; } = string.Empty;
     
 
-    private void GotoFetchData() => NavigationManager.NavigateTo("fetchdata");
+    private void GotoFetchData() => NavigationManager.NavigateTo("planningpoker");
     private void GotoCounter() => NavigationManager.NavigateTo("counter"); 
     private void GotoWouldYouRather() => NavigationManager.NavigateTo("wouldyourather");
     private void GotoPlanningPoker() => NavigationManager.NavigateTo("planningpoker");
