@@ -1,7 +1,6 @@
 ﻿@page "/"
 
 @inject NavigationManager NavigationManager
-@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject HttpClient Http
 
 <PageTitle>Index</PageTitle>
@@ -21,18 +20,7 @@
 <label for="fname">Version: </label>
 <input class="no-border" @bind="@GitHash" readonly />
 @code {
-    const string PLAY_NAME_STORAGE_KEY = "gamebox.playername";
 
-    private string _playerName = string.Empty;
-    private string PlayerName { 
-        get => _playerName;
-        set
-        {
-            _playerName = value;
-            LocalStorage.SetItemAsync(PLAY_NAME_STORAGE_KEY, PlayerName);
-        }
-    }
-    
     public string GitHash { get; set; } = string.Empty;
     
 

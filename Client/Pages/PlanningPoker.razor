@@ -2,6 +2,7 @@
 
 @using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager NavigationManager
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject HttpClient Http
 
 @implements IAsyncDisposable
@@ -50,7 +51,7 @@ label.game-code {
 <div class="form-group">
     <label>
         What is your Name?
-        <input @bind="userInput" />
+        <input @bind="PlayerName" />
     </label>
 </div>
 <div class="form-group">
@@ -81,14 +82,25 @@ label.game-code {
 @code {
     private HubConnection? hubConnection;
     private List<string> messages = new List<string>();
-    private string? userInput;
     private string? messageInput;
     private string? _gameCode;
 
 
+    const string PLAYER_NAME_STORAGE_KEY = "gamebox.playername";
+
+    private string _playerName = string.Empty;
+    private string PlayerName { 
+        get => _playerName;
+        set
+        {
+            _playerName = value;
+            LocalStorage.SetItemAsync(PLAYER_NAME_STORAGE_KEY, PlayerName);
+        }
+    }
+
+
     private async Task GotoJoinAsPlayer()
     {
-
         await Send();
     }
     private async Task GotoJoinAsSpectator()
@@ -99,6 +111,13 @@ label.game-code {
     protected override async Task OnInitializedAsync()
     {
         _gameCode = await Http.GetStringAsync("GameCoordinator/gamecode");
+
+        // See if name has been previously used
+        _playerName = await LocalStorage.GetItemAsStringAsync(PLAYER_NAME_STORAGE_KEY);
+        if (_playerName.Length >= 2)
+        {
+          //  _playerName = _playerName[1..-1];
+        }
 
             
         hubConnection = new HubConnectionBuilder()
@@ -119,7 +138,7 @@ label.game-code {
     {
         if (hubConnection is not null)
         {
-            await hubConnection.SendAsync("SendMessage", userInput, messageInput, _gameCode);
+            await hubConnection.SendAsync("SendMessage", _playerName, messageInput, _gameCode);
         }
     }
 
