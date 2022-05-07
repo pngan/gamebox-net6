@@ -36,4 +36,12 @@ app.MapControllers();
 app.MapHub<PlanningPokerHub>("/planningpokerhub");
 app.MapFallbackToFile("index.html");
 
+string[] files = Directory.GetFiles(Directory.GetCurrentDirectory());
+
+if (File.Exists("githash"))
+{
+    var gitHash = File.ReadAllText("githash");
+    Environment.SetEnvironmentVariable("githash", gitHash);
+}
+
 app.Run();
