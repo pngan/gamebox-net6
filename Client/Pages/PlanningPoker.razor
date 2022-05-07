@@ -1,4 +1,4 @@
-﻿@page "/planningpoker"
+﻿@page "/planningpoker/{gamecode}"
 
 @using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager NavigationManager
@@ -84,6 +84,14 @@ label.game-code {
     private List<string> messages = new List<string>();
     private string? messageInput;
     private string? _gameCode;
+    const int MAX_PLAYERS = 8;
+
+    [Parameter]
+    public string? Gamecode
+    {
+        get => _gameCode;
+        set => _gameCode = value;
+    }
 
 
     const string PLAYER_NAME_STORAGE_KEY = "gamebox.playername";
@@ -101,6 +109,11 @@ label.game-code {
 
     private async Task GotoJoinAsPlayer()
     {
+        var numberPlayers = await Http.GetStringAsync($"GameCoordinator/numberofplayers/{Gamecode}");
+        if (int.Parse(numberPlayers) >= MAX_PLAYERS)
+        {
+            // Error message
+        }
         await Send();
     }
     private async Task GotoJoinAsSpectator()
@@ -110,7 +123,10 @@ label.game-code {
 
     protected override async Task OnInitializedAsync()
     {
-        _gameCode = await Http.GetStringAsync("GameCoordinator/gamecode");
+        if (string.IsNullOrEmpty(Gamecode) || Gamecode == "newgame")
+        {
+            Gamecode = await Http.GetStringAsync("GameCoordinator/gamecode");
+        }
 
         // See if name has been previously used
         _playerName = await LocalStorage.GetItemAsStringAsync(PLAYER_NAME_STORAGE_KEY) ?? string.Empty;

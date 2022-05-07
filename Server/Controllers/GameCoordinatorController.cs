@@ -22,9 +22,17 @@ namespace gamebox.Server.Controllers
             do
             {
                 gameCode = GenerateRandomGameCode();
-            } while (_gameRepository.DoesGameExist(gameCode)); // Avoid duplicate game codes
+            } while (_gameRepository.NumberOfPlayers(gameCode) > 0); // Avoid duplicate game codes
 
             return gameCode;
+        }
+
+
+        [HttpGet]
+        [Route("numberofplayers/{gamecode}")]
+        public int NumberOfPlayers(string gamecode)
+        {
+            return _gameRepository.NumberOfPlayers(gamecode);
         }
 
         private string GenerateRandomGameCode()
@@ -38,5 +46,9 @@ namespace gamebox.Server.Controllers
 
             return gameCode;
         }
+
+
+
+
     }
 }
