@@ -113,10 +113,10 @@ label.game-code {
         _gameCode = await Http.GetStringAsync("GameCoordinator/gamecode");
 
         // See if name has been previously used
-        _playerName = await LocalStorage.GetItemAsStringAsync(PLAYER_NAME_STORAGE_KEY);
+        _playerName = await LocalStorage.GetItemAsStringAsync(PLAYER_NAME_STORAGE_KEY) ?? string.Empty;
         if (_playerName.Length >= 2)
         {
-          //  _playerName = _playerName[1..-1];
+            _playerName = _playerName.Substring(1, _playerName.Length - 2);
         }
 
             
