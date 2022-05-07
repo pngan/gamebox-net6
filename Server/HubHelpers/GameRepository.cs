@@ -12,5 +12,6 @@
         {
             return _userInformation.TryGetValue(connectionId, out var game) ? game : null;
         }
+        public bool DoesGameExist(string gameCode) => _userInformation.ContainsValue(gameCode);
     }
 }

@@ -14,10 +14,10 @@ public class PlanningPokerHub : Hub
 
     public async Task SendMessage(string user, string message, string gameCode)
     {
-        var isUserInGame = _gameRepository.IsUserInGame(user, gameCode);
+        var isUserInGame = _gameRepository.IsUserInGame(Context.ConnectionId, gameCode);
         if (!isUserInGame)
         {
-            _gameRepository.AddUserToGame(user, gameCode);
+            _gameRepository.AddUserToGame(Context.ConnectionId, gameCode);
             await Groups.AddToGroupAsync(Context.ConnectionId, gameCode);
         }
 

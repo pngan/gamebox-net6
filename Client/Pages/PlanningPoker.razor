@@ -1,6 +1,9 @@
 ﻿@page "/planningpoker"
+
 @using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager NavigationManager
+@inject HttpClient Http
+
 @implements IAsyncDisposable
 
 <PageTitle>Planning Poker</PageTitle>
@@ -85,6 +88,7 @@ label.game-code {
 
     private async Task GotoJoinAsPlayer()
     {
+
         await Send();
     }
     private async Task GotoJoinAsSpectator()
@@ -94,7 +98,8 @@ label.game-code {
 
     protected override async Task OnInitializedAsync()
     {
-        _gameCode = "JDLR";
+        _gameCode = await Http.GetStringAsync("GameCoordinator/gamecode");
+
             
         hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/planningpokerhub"))
