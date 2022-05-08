@@ -87,9 +87,9 @@ label.game-code {
     private string? messageInput;
     private string? _gameCode;
     const int MAX_PLAYERS = 8;
-    private string[] errorGameCodeWrongFormat = new[] { "Game Code must be four letters." };
-    private string[] errorGameCodeDoesNotExist= new[] { "Game does not exist." };
-    private string[] errorGameIsFull= new[] { "Sorry, game is full" };
+    private string errorGameCodeWrongFormat  = "Use 4 letter game code.";
+    private string errorGameCodeDoesNotExist =  "Game does not exist.";
+    private string errorGameIsFull =  "Sorry, game is full";
 
     [Parameter]
     public string? Gamecode
@@ -125,13 +125,13 @@ label.game-code {
         if (Gamecode == "NEWGAME")
         {
             Gamecode = await Http.GetStringAsync("GameCoordinator/gamecode");
+            await JoinGame();
         }
         else
         {
             if (!Regex.IsMatch(Gamecode!, "[A-Z]{4}"))
             {
-                await JSRuntime.InvokeAsync<object>("Alert", errorGameCodeWrongFormat);
-                NavigationManager.NavigateTo("");
+                NavigationManager.NavigateTo( Uri.EscapeDataString($"{errorGameCodeWrongFormat}"));
             }
             else
             {
@@ -139,18 +139,14 @@ label.game-code {
                 int numberPlayers = int.Parse(numberPlayersStr);
                 if (numberPlayers == 0)
                 {
-                    await JSRuntime.InvokeAsync<object>("Alert", errorGameCodeDoesNotExist);
-                    NavigationManager.NavigateTo("");
+                    NavigationManager.NavigateTo( Uri.EscapeDataString(""));
                 }
                 if (numberPlayers > MAX_PLAYERS)
                 {
-                    await JSRuntime.InvokeAsync<object>("Alert", errorGameIsFull);
                     NavigationManager.NavigateTo("");
                 }
             }
         }
-
-        await JoinGame();
     }
 
     protected override async Task OnInitializedAsync()

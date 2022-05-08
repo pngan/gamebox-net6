@@ -1,4 +1,5 @@
 ﻿@page "/"
+@page "/{ErrorMessage}"
 
 @inject NavigationManager NavigationManager
 @inject HttpClient Http
@@ -6,7 +7,7 @@
 <PageTitle>Index</PageTitle>
 
 
-<h1>Choose Your Game!</h1>
+<h1>Choose Your Game</h1>
 <div class="button-box">
     <div class="grid-container">
         <input class="grid-item"  type="text" @bind="@GameCode" placeholder="Optional Game Code"  />
@@ -14,7 +15,7 @@
         <button class="grid-item" @onclick="GotoFetchData">Count Down</button>
         <button class="grid-item" @onclick="GotoCounter">Up and Down</button>
         <button class="grid-item" @onclick="GotoWouldYouRather">Guess Who</button>
-
+        <input  class="grid-item no-border" @bind="@ErrorMessage" readonly />
     </div>
 </div>
 <label for="fname">Version: </label>
@@ -23,6 +24,8 @@
 
     public string GitHash { get; set; } = string.Empty;
     public string GameCode { get; set; } = string.Empty;
+
+    [Parameter] public string ErrorMessage { get; set; } = string.Empty;
 
     private string GetGameCode()
     {
