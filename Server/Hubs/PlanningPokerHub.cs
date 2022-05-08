@@ -24,6 +24,11 @@ public class PlanningPokerHub : Hub
         await Clients.Group(gameCode).SendAsync("ReceiveMessage", user, message);
     }
 
+    public async Task JoinGame(string user, string gameCode)
+    {
+        await SendMessage(user, $"'{user}' joined Planning Poker", gameCode );
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var game = _gameRepository.GetGameByUser(Context.ConnectionId);

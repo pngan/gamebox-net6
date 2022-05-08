@@ -1,9 +1,11 @@
 ﻿@page "/planningpoker/{gamecode}"
 
 @using Microsoft.AspNetCore.SignalR.Client
+@using System.Text.RegularExpressions;
 @inject NavigationManager NavigationManager
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject HttpClient Http
+@inject IJSRuntime JSRuntime
 
 @implements IAsyncDisposable
 
@@ -85,12 +87,15 @@ label.game-code {
     private string? messageInput;
     private string? _gameCode;
     const int MAX_PLAYERS = 8;
+    private string[] errorGameCodeWrongFormat = new[] { "Game Code must be four letters." };
+    private string[] errorGameCodeDoesNotExist= new[] { "Game does not exist." };
+    private string[] errorGameIsFull= new[] { "Sorry, game is full" };
 
     [Parameter]
     public string? Gamecode
     {
         get => _gameCode;
-        set => _gameCode = value;
+        set => _gameCode = value?.ToUpper();
     }
 
 
@@ -109,25 +114,47 @@ label.game-code {
 
     private async Task GotoJoinAsPlayer()
     {
-        var numberPlayers = await Http.GetStringAsync($"GameCoordinator/numberofplayers/{Gamecode}");
-        if (int.Parse(numberPlayers) >= MAX_PLAYERS)
-        {
-            // Error message
-        }
-        await Send();
     }
     private async Task GotoJoinAsSpectator()
     {
         await Send();
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        if (string.IsNullOrEmpty(Gamecode) || Gamecode == "newgame")
+        if (Gamecode == "NEWGAME")
         {
             Gamecode = await Http.GetStringAsync("GameCoordinator/gamecode");
         }
+        else
+        {
+            if (!Regex.IsMatch(Gamecode!, "[A-Z]{4}"))
+            {
+                await JSRuntime.InvokeAsync<object>("Alert", errorGameCodeWrongFormat);
+                NavigationManager.NavigateTo("");
+            }
+            else
+            {
+                var numberPlayersStr = await Http.GetStringAsync($"GameCoordinator/numberofplayers/{Gamecode}");
+                int numberPlayers = int.Parse(numberPlayersStr);
+                if (numberPlayers == 0)
+                {
+                    await JSRuntime.InvokeAsync<object>("Alert", errorGameCodeDoesNotExist);
+                    NavigationManager.NavigateTo("");
+                }
+                if (numberPlayers > MAX_PLAYERS)
+                {
+                    await JSRuntime.InvokeAsync<object>("Alert", errorGameIsFull);
+                    NavigationManager.NavigateTo("");
+                }
+            }
+        }
 
+        await JoinGame();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
         // See if name has been previously used
         _playerName = await LocalStorage.GetItemAsStringAsync(PLAYER_NAME_STORAGE_KEY) ?? string.Empty;
         if (_playerName.Length >= 2)
@@ -135,7 +162,6 @@ label.game-code {
             _playerName = _playerName.Substring(1, _playerName.Length - 2);
         }
 
-            
         hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/planningpokerhub"))
             .Build();
@@ -157,6 +183,15 @@ label.game-code {
             await hubConnection.SendAsync("SendMessage", _playerName, messageInput, _gameCode);
         }
     }
+
+    private async Task JoinGame()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("JoinGame", _playerName, Gamecode);
+        }
+    }
+
 
     public bool IsConnected =>
         hubConnection?.State == HubConnectionState.Connected;
