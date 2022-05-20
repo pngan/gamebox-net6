@@ -1,4 +1,4 @@
-﻿@page "/planningpoker/{gamecode}"
+﻿@page "/planningpokersignup/{gamecode}"
 
 @using Microsoft.AspNetCore.SignalR.Client
 @using System.Text.RegularExpressions;
@@ -86,8 +86,8 @@ label.game-code {
     private List<string> messages = new List<string>();
     private string? messageInput;
     private string? _gameCode;
-    const int MAX_PLAYERS = 8;
-    private string errorGameCodeWrongFormat  = "Use 4 letter game code.";
+    const int MAX_PLAYERS = 2;
+    private string errorGameCodeWrongFormat  = "Use 1 letter game code.";
     private string errorGameCodeDoesNotExist =  "Game does not exist.";
     private string errorGameIsFull =  "Sorry, game is full";
 
@@ -120,8 +120,10 @@ label.game-code {
         {
             NavigationManager.NavigateTo(Uri.EscapeDataString($"{errorGameIsFull}"));
         }
-
-        await JoinGame();
+        else
+        {
+            await JoinGame();
+        }
     }
 
     private async Task GotoJoinAsSpectator()
@@ -134,11 +136,11 @@ label.game-code {
         if (Gamecode == "NEWGAME")
         {
             Gamecode = await Http.GetStringAsync("GameCoordinator/gamecode");
-            await JoinGame();
+            //await JoinGame();
         }
         else
         {
-            if (!Regex.IsMatch(Gamecode!, "[A-Z]{4}"))
+            if (!Regex.IsMatch(Gamecode!, "[A-Z]{1}"))
             {
                 NavigationManager.NavigateTo( Uri.EscapeDataString($"{errorGameCodeWrongFormat}"));
             }

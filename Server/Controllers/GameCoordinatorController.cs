@@ -40,9 +40,9 @@ namespace gamebox.Server.Controllers
             var gameCode = string.Empty;
             var random = new Random();
             gameCode += (char) random.Next(65, 90); // A-Z
-            gameCode += (char) random.Next(65, 90);
-            gameCode += (char) random.Next(65, 90);
-            gameCode += (char) random.Next(65, 90);
+            //gameCode += (char) random.Next(65, 90);
+            //gameCode += (char) random.Next(65, 90);
+            //gameCode += (char) random.Next(65, 90);
 
             return gameCode;
         }
