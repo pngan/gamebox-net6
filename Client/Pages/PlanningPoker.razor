@@ -9,7 +9,7 @@
 
 @implements IAsyncDisposable
 
-<PageTitle>Planning Poker</PageTitle>
+<PageTitle>Planning Poker!</PageTitle>
 <style>
     
 
@@ -114,8 +114,16 @@ label.game-code {
 
     private async Task GotoJoinAsPlayer()
     {
-        await Task.CompletedTask;
+        var numberPlayersStr = await Http.GetStringAsync($"GameCoordinator/numberofplayers/{Gamecode}");
+        int numberPlayers = int.Parse(numberPlayersStr);
+        if (numberPlayers >= MAX_PLAYERS)
+        {
+            NavigationManager.NavigateTo(Uri.EscapeDataString($"{errorGameIsFull}"));
+        }
+
+        await JoinGame();
     }
+
     private async Task GotoJoinAsSpectator()
     {
         await Send();
@@ -134,19 +142,7 @@ label.game-code {
             {
                 NavigationManager.NavigateTo( Uri.EscapeDataString($"{errorGameCodeWrongFormat}"));
             }
-            else
-            {
-                var numberPlayersStr = await Http.GetStringAsync($"GameCoordinator/numberofplayers/{Gamecode}");
-                int numberPlayers = int.Parse(numberPlayersStr);
-                if (numberPlayers == 0)
-                {
-                    NavigationManager.NavigateTo( Uri.EscapeDataString(""));
-                }
-                if (numberPlayers > MAX_PLAYERS)
-                {
-                    NavigationManager.NavigateTo("");
-                }
-            }
+
         }
     }
 
