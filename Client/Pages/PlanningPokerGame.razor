@@ -1,4 +1,4 @@
-﻿@page "/planningpokersignup/{gamecode}"
+﻿@page "/planningpokergame/{gamecode}/{username}"
 
 @using Microsoft.AspNetCore.SignalR.Client
 @using System.Text.RegularExpressions;
@@ -43,43 +43,13 @@ label.game-code {
 <div class="planning-poker-container">
 
 <div class="page-banner">
-    Welcome to Planning Poker
+    Planning Poker is in Progress
 </div>
 <div class="form-group">
 
-    <label>Game Code: </label>
-    <label class="game-code">@(_gameCode)</label>
+    <label>Hello  </label>
+    <label class="game-code">@(Username)</label>
 </div>
-<div class="form-group">
-    <label>
-        What is your Name?
-        <input @bind="PlayerName" />
-    </label>
-</div>
-<div class="form-group">
-    <label>
-        Message:
-        <input @bind="messageInput" size="50" />
-    </label>
-</div>
-<div class="button-box">
-    <div class="grid-container">
-        <button class="grid-item" @onclick="GotoJoinAsPlayer">Join As Player</button>
-        <button class="grid-item" @onclick="GotoJoinAsSpectator">Join As Spectator</button>
-        <button class="grid-item" @onclick="GotoStartPlanningPoker">Start Game</button>
-    </div>
-</div>
-<button @onclick="Send" disabled="@(!IsConnected)">Send</button>
-
-<hr>
-
-<ul id="messagesList">
-    @foreach (var message in messages)
-    {
-        <li>@message</li>
-    }
-</ul>
-
 </div>
 
 @code {
@@ -99,6 +69,9 @@ label.game-code {
         set => _gameCode = value?.ToUpper();
     }
 
+    [Parameter]
+    public string? Username { get; set; }
+
 
     const string PLAYER_NAME_STORAGE_KEY = "gamebox.playername";
 
@@ -112,28 +85,6 @@ label.game-code {
         }
     }
 
-
-    private async Task GotoJoinAsPlayer()
-    {
-        var numberPlayersStr = await Http.GetStringAsync($"GameCoordinator/numberofplayers/{Gamecode}");
-        int numberPlayers = int.Parse(numberPlayersStr);
-        if (numberPlayers >= MAX_PLAYERS)
-        {
-            NavigationManager.NavigateTo(Uri.EscapeDataString($"{errorGameIsFull}"));
-        }
-        else
-        {
-            await JoinGame();
-        }
-    }
-
-    private async Task GotoJoinAsSpectator()
-    {
-        await Send();
-    }
-
-    private async Task GotoStartPlanningPoker() =>  NavigationManager.NavigateTo($"planningpokergame/{Gamecode}/{PlayerName}");
-
     protected override async Task OnParametersSetAsync()
     {
         if (Gamecode == "NEWGAME")
@@ -145,21 +96,14 @@ label.game-code {
         {
             if (!Regex.IsMatch(Gamecode!, "[A-Z]{1}"))
             {
+                var navoptions = new NavigationOptions();
                 NavigationManager.NavigateTo( Uri.EscapeDataString($"{errorGameCodeWrongFormat}"));
             }
-
         }
     }
 
     protected override async Task OnInitializedAsync()
     {
-        // See if name has been previously used
-        _playerName = await LocalStorage.GetItemAsStringAsync(PLAYER_NAME_STORAGE_KEY) ?? string.Empty;
-        if (_playerName.Length >= 2)
-        {
-            _playerName = _playerName.Substring(1, _playerName.Length - 2);
-        }
-
         hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/planningpokerhub"))
             .Build();
