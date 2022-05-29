@@ -6,15 +6,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSignalR();
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
-builder.Services.AddResponseCompression(opts =>
-{
-    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
-        new[] { "application/octet-stream" });
-});
+//builder.Services.AddResponseCompression(opts =>
+//{
+//    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+//        new[] { "application/octet-stream" });
+//});
 builder.Services.AddSingleton<IGameRepository, GameRepository>();
 
 var app = builder.Build();
-app.UseResponseCompression();
+//app.UseResponseCompression();
 
 if (app.Environment.IsDevelopment())
 {
