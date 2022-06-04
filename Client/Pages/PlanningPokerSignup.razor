@@ -1,4 +1,4 @@
-﻿@page "/planningpokersignup/{gamecode}"
+﻿@page "/planningpoker/signup/{gamecode}"
 
 @using Microsoft.AspNetCore.SignalR.Client
 @using System.Text.RegularExpressions;
@@ -132,7 +132,11 @@ label.game-code {
         await Send();
     }
 
-    private async Task GotoStartPlanningPoker() =>  NavigationManager.NavigateTo($"planningpokergame/{Gamecode}/{PlayerName}");
+    private async Task GotoStartPlanningPoker() 
+    {
+        NavigationManager.NavigateTo($"planningpokergame/{Gamecode}/{PlayerName}");
+        await Task.CompletedTask;
+    }
 
     protected override async Task OnParametersSetAsync()
     {
