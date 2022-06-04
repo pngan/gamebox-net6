@@ -1,4 +1,5 @@
-﻿@page "/planningpoker/signup/{gamecode}"
+﻿@page "/planningpoker/signup"
+@page "/planningpoker/signup/{gamecode}"
 
 @using Microsoft.AspNetCore.SignalR.Client
 @using System.Text.RegularExpressions;
@@ -140,10 +141,10 @@ label.game-code {
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Gamecode == "NEWGAME")
+        if (string.IsNullOrWhiteSpace(Gamecode))
         {
             Gamecode = await Http.GetStringAsync("GameCoordinator/gamecode");
-            //await JoinGame();
+            NavigationManager.NavigateTo($"planningpoker/signup/{_gameCode}");
         }
         else
         {

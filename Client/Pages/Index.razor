@@ -27,17 +27,18 @@
 
     [Parameter] public string ErrorMessage { get; set; } = string.Empty;
 
-    private string GetGameCode()
-    {
-        return (string.IsNullOrWhiteSpace(GameCode)) ? "NEWGAME" : GameCode;
-    }
 
 
     private void GotoFetchData() => NavigationManager.NavigateTo("planningpoker/jkhg");
     private void GotoCounter() => NavigationManager.NavigateTo("counter"); 
     private void GotoWouldYouRather() => NavigationManager.NavigateTo("wouldyourather");
-    private void GotoPlanningPoker() => NavigationManager.NavigateTo($"planningpoker/signup/{GetGameCode()}");
-
+    private void GotoPlanningPoker()
+    {
+        if (string.IsNullOrWhiteSpace(GameCode))
+            NavigationManager.NavigateTo($"planningpoker/signup");
+        else
+            NavigationManager.NavigateTo($"planningpoker/signup/{GameCode}");
+    }
     protected override async Task OnInitializedAsync()
     {
         GitHash = await Http.GetStringAsync("GitHash");
