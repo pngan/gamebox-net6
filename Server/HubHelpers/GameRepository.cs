@@ -3,15 +3,14 @@
     public class GameRepository : IGameRepository
     {
         // TODO replace this in memory store with Redis with a TTL
-        private readonly Dictionary<string, string> _userInformation = new();
+        private readonly Dictionary<string, string> _gameInformation = new();
 
-        public void AddUserToGame(string user, string gameCode) => _userInformation.Add(user, gameCode);
+        public bool DoesGameExist(string gameCode) => _gameInformation.ContainsKey(gameCode);
 
-        public bool IsUserInGame(string user, string gameCode)=>  _userInformation.ContainsKey(user);
-        public string? GetGameByUser(string connectionId)
-        {
-            return _userInformation.TryGetValue(connectionId, out var game) ? game : null;
-        }
-        public int NumberOfPlayers(string gameCode) => _userInformation.Values.Count(v => v == gameCode);
+        public string GetGameInfo(string gameCode)
+            => _gameInformation.TryGetValue(gameCode, out var gameInfo) ? gameInfo : String.Empty;
+
+        public void AddorUpdateGameInfo(string gameCode, string gameInfo)
+            => _gameInformation[gameCode] = gameInfo;
     }
 }

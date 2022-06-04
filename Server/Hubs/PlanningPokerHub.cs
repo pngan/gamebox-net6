@@ -3,36 +3,15 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace gamebox.Server.Hubs;
 
-public class PlanningPokerHub : Hub
+public class GameHub : Hub
 {
-    private readonly IGameRepository _gameRepository;
-
-    public PlanningPokerHub(IGameRepository gameRepository)
+    public async Task BroadcastGameInfo(string gameCode, string gameInfo)
     {
-        _gameRepository = gameRepository;
+        await Clients.Group(gameCode).SendAsync("BroadcastGameInfo", gameInfo);
     }
 
-    public async Task SendMessage(string user, string message, string gameCode)
+    public async Task JoinGame(string gameCode)
     {
-        var isUserInGame = _gameRepository.IsUserInGame(Context.ConnectionId, gameCode);
-        if (!isUserInGame)
-        {
-            _gameRepository.AddUserToGame(Context.ConnectionId, gameCode);
-            await Groups.AddToGroupAsync(Context.ConnectionId, gameCode);
-        }
-
-        await Clients.Group(gameCode).SendAsync("ReceiveMessage", user, message);
-    }
-
-    public async Task JoinGame(string user, string gameCode)
-    {
-        await SendMessage(user, $"'{user}' joined Planning Poker", gameCode );
-    }
-
-    public override async Task OnDisconnectedAsync(Exception? exception)
-    {
-        var game = _gameRepository.GetGameByUser(Context.ConnectionId);
-        if (game is null) return;
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, game);
+        await Groups.AddToGroupAsync(Context.ConnectionId, gameCode);
     }
 }

@@ -22,17 +22,25 @@ namespace gamebox.Server.Controllers
             do
             {
                 gameCode = GenerateRandomGameCode();
-            } while (_gameRepository.NumberOfPlayers(gameCode) > 0); // Avoid duplicate game codes
+            } while (!string.IsNullOrWhiteSpace(_gameRepository.GetGameInfo(gameCode))); // Avoid duplicate game codes
 
             return gameCode;
         }
 
 
         [HttpGet]
-        [Route("numberofplayers/{gamecode}")]
-        public int NumberOfPlayers(string gamecode)
+        [Route("{gamecode}")]
+        public string? GetGameInfo(string gamecode)
         {
-            return _gameRepository.NumberOfPlayers(gamecode);
+            var gameInfo = _gameRepository.GetGameInfo(gamecode);
+            return gameInfo;
+        }
+
+        [HttpPost]
+        [Route("{gamecode}")]
+        public void AddOrUpdateGameInfo(string gamecode, [FromBody] string gameInfo)
+        {
+            _gameRepository.AddorUpdateGameInfo(gamecode, gameInfo);
         }
 
         private string GenerateRandomGameCode()
@@ -46,9 +54,5 @@ namespace gamebox.Server.Controllers
 
             return gameCode;
         }
-
-
-
-
     }
 }

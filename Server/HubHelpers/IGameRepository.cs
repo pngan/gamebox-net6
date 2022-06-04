@@ -2,9 +2,8 @@
 {
     public interface IGameRepository
     {
-        bool IsUserInGame(string connectionId, string gameCode);
-        void AddUserToGame(string connectionId, string gameCode);
-        string? GetGameByUser(string connectionId);
-        int NumberOfPlayers(string gameCode);
+        bool DoesGameExist(string gameCode);
+        string GetGameInfo(string gameCode);
+        void AddorUpdateGameInfo(string gameCode, string gameInfo);
     }
 }

@@ -3,6 +3,7 @@
 
 @using Microsoft.AspNetCore.SignalR.Client
 @using System.Text.RegularExpressions;
+@using gamebox.Client.Models
 @inject NavigationManager NavigationManager
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject HttpClient Http
@@ -67,20 +68,8 @@ label.game-code {
     <div class="grid-container">
         <button class="grid-item" @onclick="GotoJoinAsPlayer">Join As Player</button>
         <button class="grid-item" @onclick="GotoJoinAsSpectator">Join As Spectator</button>
-        <button class="grid-item" @onclick="GotoStartPlanningPoker">Start Game</button>
     </div>
 </div>
-<button @onclick="Send" disabled="@(!IsConnected)">Send</button>
-
-<hr>
-
-<ul id="messagesList">
-    @foreach (var message in messages)
-    {
-        <li>@message</li>
-    }
-</ul>
-
 </div>
 
 @code {
@@ -102,6 +91,7 @@ label.game-code {
 
 
     const string PLAYER_NAME_STORAGE_KEY = "gamebox.playername";
+    enum PlayerType {PLAYER, SPECTATOR};
 
     private string _playerName = string.Empty;
     private string PlayerName { 
@@ -116,28 +106,22 @@ label.game-code {
 
     private async Task GotoJoinAsPlayer()
     {
-        var numberPlayersStr = await Http.GetStringAsync($"GameCoordinator/numberofplayers/{Gamecode}");
-        int numberPlayers = int.Parse(numberPlayersStr);
-        if (numberPlayers >= MAX_PLAYERS)
+        //var gameInfoRaw = await Http.GetStringAsync($"GameCoordinator/{Gamecode}");
+        //var gameInfo = string.IsNullOrWhiteSpace(gameInfoRaw) ? new PokerPlanningGameInfo() :
+
+
+        var gameInfo = await Http.GetFromJsonAsync<PokerPlanningGameInfo?>($"GameCoordinator/{Gamecode}");
+        if (gameInfo is not null && gameInfo.Players.Count >= MAX_PLAYERS)
         {
             NavigationManager.NavigateTo(Uri.EscapeDataString($"{errorGameIsFull}"));
         }
         else
         {
-            await JoinGame();
+            await JoinGame(PlayerType.PLAYER);
         }
     }
 
-    private async Task GotoJoinAsSpectator()
-    {
-        await Send();
-    }
-
-    private async Task GotoStartPlanningPoker() 
-    {
-        NavigationManager.NavigateTo($"planningpokergame/{Gamecode}/{PlayerName}");
-        await Task.CompletedTask;
-    }
+    private async Task GotoJoinAsSpectator() => await JoinGame(PlayerType.SPECTATOR);
 
     protected override async Task OnParametersSetAsync()
     {
@@ -169,30 +153,30 @@ label.game-code {
             .WithUrl(NavigationManager.ToAbsoluteUri("/planningpokerhub"))
             .Build();
 
-        hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
-        {
-            var encodedMsg = $"{user}: {message}";
-            messages.Add(encodedMsg);
-            StateHasChanged();
-        });
-
         await hubConnection.StartAsync();
     }
 
-    private async Task Send()
+    private async Task JoinGame(PlayerType playerType)
     {
         if (hubConnection is not null)
         {
-            await hubConnection.SendAsync("SendMessage", _playerName, messageInput, _gameCode);
+            await hubConnection.SendAsync("JoinGame", Gamecode);
         }
-    }
 
-    private async Task JoinGame()
-    {
-        if (hubConnection is not null)
+        var gameInfo = await Http.GetFromJsonAsync<PokerPlanningGameInfo>($"GameCoordinator/{Gamecode}");
+        if (gameInfo == null)
+            gameInfo = new PokerPlanningGameInfo();
+
+        if (playerType == PlayerType.PLAYER && gameInfo.Players.All(p => string.Compare(p, PlayerName, StringComparison.InvariantCultureIgnoreCase) != 0))
         {
-            await hubConnection.SendAsync("JoinGame", _playerName, Gamecode);
+            gameInfo.Players.Add(PlayerName);
         }
+        else if (gameInfo.Spectators.All(p => string.Compare(p, PlayerName, StringComparison.InvariantCultureIgnoreCase) != 0))        
+        {
+            gameInfo.Spectators.Add(PlayerName);
+        }
+
+        await Http.PostAsJsonAsync($"GameCoordinator/{Gamecode}", gameInfo);
     }
 
 

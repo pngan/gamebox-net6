@@ -35,7 +35,7 @@ app.UseRouting();
 
 app.MapRazorPages();
 app.MapControllers();
-app.MapHub<PlanningPokerHub>("/planningpokerhub");
+app.MapHub<GameHub>("/planningpokerhub");
 app.MapFallbackToFile("index.html");
 
 string[] files = Directory.GetFiles(Directory.GetCurrentDirectory());
