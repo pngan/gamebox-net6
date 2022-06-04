@@ -94,7 +94,7 @@ label.game-code {
         }
         else
         {
-            if (!Regex.IsMatch(Gamecode!, "[A-Z]{1}"))
+            if (!Regex.IsMatch(Gamecode!, "^[A-Z]{1}$"))
             {
                 var navoptions = new NavigationOptions();
                 NavigationManager.NavigateTo( Uri.EscapeDataString($"{errorGameCodeWrongFormat}"));
