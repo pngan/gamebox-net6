@@ -3,7 +3,7 @@
     public interface IGameRepository
     {
         bool DoesGameExist(string gameCode);
-        string GetGameInfo(string gameCode);
+        string? GetGameInfo(string gameCode);
         void AddorUpdateGameInfo(string gameCode, string gameInfo);
     }
 }

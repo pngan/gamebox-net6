@@ -30,7 +30,7 @@ namespace gamebox.Server.Controllers
 
         [HttpGet]
         [Route("{gamecode}")]
-        public string? GetGameInfo(string gamecode)
+        public string GetGameInfo(string gamecode)
         {
             var gameInfo = _gameRepository.GetGameInfo(gamecode);
             return gameInfo;
@@ -38,10 +38,14 @@ namespace gamebox.Server.Controllers
 
         [HttpPost]
         [Route("{gamecode}")]
-        public void AddOrUpdateGameInfo(string gamecode, [FromBody] string gameInfo)
+        public void AddOrUpdateGameInfo(string gamecode)
         {
-            _gameRepository.AddorUpdateGameInfo(gamecode, gameInfo);
+            var value = Request.BodyReader.ReadAsync().Result;
+
+            var buffer = value.Buffer;
+            var gameInfo =System.Text.Encoding.Default.GetString(buffer.FirstSpan);
         }
+
 
         private string GenerateRandomGameCode()
         {

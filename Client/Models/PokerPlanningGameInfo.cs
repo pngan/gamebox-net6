@@ -2,7 +2,7 @@
 {
     public class PokerPlanningGameInfo
     {
-        public List<string> Players { get; set; }
-        public List<string> Spectators { get; set; }
+        public List<string> Players { get; set; } = new();
+        public List<string> Spectators { get; set; } = new();
     }
 }

@@ -1,9 +1,11 @@
 ﻿@page "/planningpoker/signup"
 @page "/planningpoker/signup/{gamecode}"
 
-@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.AspNetCore.SignalR.Client;
 @using System.Text.RegularExpressions;
-@using gamebox.Client.Models
+@using gamebox.Client.Models;
+@using System.Text.Json;
+
 @inject NavigationManager NavigationManager
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject HttpClient Http
@@ -106,22 +108,31 @@ label.game-code {
 
     private async Task GotoJoinAsPlayer()
     {
-        //var gameInfoRaw = await Http.GetStringAsync($"GameCoordinator/{Gamecode}");
-        //var gameInfo = string.IsNullOrWhiteSpace(gameInfoRaw) ? new PokerPlanningGameInfo() :
-
-
-        var gameInfo = await Http.GetFromJsonAsync<PokerPlanningGameInfo?>($"GameCoordinator/{Gamecode}");
-        if (gameInfo is not null && gameInfo.Players.Count >= MAX_PLAYERS)
+        PokerPlanningGameInfo? gameInfo = null;
+        try
         {
-            NavigationManager.NavigateTo(Uri.EscapeDataString($"{errorGameIsFull}"));
+            gameInfo = await Http.GetFromJsonAsync<PokerPlanningGameInfo>($"GameCoordinator/{Gamecode}");
+            if (gameInfo is not null && gameInfo.Players.Count >= MAX_PLAYERS)
+            {
+                NavigationManager.NavigateTo(Uri.EscapeDataString($"{errorGameIsFull}"));
+            }
         }
-        else
-        {
-            await JoinGame(PlayerType.PLAYER);
-        }
+        catch { }
+
+        await JoinGame(PlayerType.PLAYER, gameInfo ?? new PokerPlanningGameInfo());
     }
 
-    private async Task GotoJoinAsSpectator() => await JoinGame(PlayerType.SPECTATOR);
+    private async Task GotoJoinAsSpectator()
+    {
+        PokerPlanningGameInfo? gameInfo = null;
+        try
+        {
+            gameInfo = await Http.GetFromJsonAsync<PokerPlanningGameInfo>($"GameCoordinator/{Gamecode}");
+        }
+        catch { }
+
+        await JoinGame(PlayerType.SPECTATOR, gameInfo ?? new PokerPlanningGameInfo());
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -156,27 +167,39 @@ label.game-code {
         await hubConnection.StartAsync();
     }
 
-    private async Task JoinGame(PlayerType playerType)
+    private async Task JoinGame(PlayerType playerType, PokerPlanningGameInfo gameInfo)
     {
-        if (hubConnection is not null)
+        // Add Player or Spectator, only if they haven't been added previously
+        if (gameInfo.Players.All(p => string.Compare(p, PlayerName, StringComparison.InvariantCultureIgnoreCase) != 0)
+            && gameInfo.Spectators.All(p => string.Compare(p, PlayerName, StringComparison.InvariantCultureIgnoreCase) != 0))
         {
-            await hubConnection.SendAsync("JoinGame", Gamecode);
-        }
+            if (playerType == PlayerType.PLAYER)
+            {
+                gameInfo.Players.Add(PlayerName);
+            }
+            else
+            {
+                gameInfo.Spectators.Add(PlayerName);
+            }
+            try
+            {
 
-        var gameInfo = await Http.GetFromJsonAsync<PokerPlanningGameInfo>($"GameCoordinator/{Gamecode}");
-        if (gameInfo == null)
-            gameInfo = new PokerPlanningGameInfo();
+                string json = System.Text.Json.JsonSerializer.Serialize(gameInfo);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "text/plain");
+                await Http.PostAsync($"GameCoordinator/{Gamecode}", content);
+            }
+            catch (Exception ex)
+            {
 
-        if (playerType == PlayerType.PLAYER && gameInfo.Players.All(p => string.Compare(p, PlayerName, StringComparison.InvariantCultureIgnoreCase) != 0))
-        {
-            gameInfo.Players.Add(PlayerName);
-        }
-        else if (gameInfo.Spectators.All(p => string.Compare(p, PlayerName, StringComparison.InvariantCultureIgnoreCase) != 0))        
-        {
-            gameInfo.Spectators.Add(PlayerName);
-        }
+            }
 
-        await Http.PostAsJsonAsync($"GameCoordinator/{Gamecode}", gameInfo);
+
+            // Join signalr group
+            if (hubConnection is not null)
+            {
+                await hubConnection.SendAsync("JoinGame", Gamecode);
+            }
+        }
     }
 
 
