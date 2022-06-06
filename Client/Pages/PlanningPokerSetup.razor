@@ -68,7 +68,7 @@ label.game-code {
     private string? messageInput;
     private string? _gameCode;
     private PokerPlanningGameInfo gameInfo = new();
-    private List<string> Players = new List<string> { "hi", "there" };
+    private List<string> Players = new();
 
     [Parameter]
     public string? Gamecode
@@ -91,17 +91,23 @@ label.game-code {
 
     protected override async Task OnParametersSetAsync()
     {
-
-        PokerPlanningGameInfo? gameInfo = null;
-        try
-        {
-            gameInfo = await Http.GetFromJsonAsync<PokerPlanningGameInfo>($"GameCoordinator/{Gamecode}");
-        }
-        catch { }
-
-        foreach (var player in gameInfo.Players)
-            Players.Add(player);
+        RefreshGameInfoAsync();
     }
+
+
+    private void RefreshGameInfoAsync()
+    {
+        PokerPlanningGameInfo? gameInfo = null;
+        //try
+        //{
+        //    gameInfo = await Http.GetFromJsonAsync<PokerPlanningGameInfo>($"GameCoordinator/{Gamecode}");
+        //}
+        //catch { }
+
+        //foreach (var player in gameInfo.Players)
+        //    Players.Add(player);
+    }
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -109,6 +115,7 @@ label.game-code {
             .WithUrl(NavigationManager.ToAbsoluteUri("/planningpokerhub"))
             .Build();
 
+            
         hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
         {
             var encodedMsg = $"{user}: {message}";
@@ -116,28 +123,31 @@ label.game-code {
             StateHasChanged();
         });
 
+        hubConnection.On<string>("BroadcastGameInfo", (value) =>
+        {
+            RefreshGameInfoAsync();
+            StateHasChanged();
+        });
+
         await hubConnection.StartAsync();
-
-
     }
 
-    private async Task Send()
+    private async Task BroadcastGameInfoAsync()
     {
         if (hubConnection is not null)
         {
-            await hubConnection.SendAsync("SendMessage", _playerName, messageInput, _gameCode);
+            await hubConnection.SendAsync("BroadcastGameInfo", _gameCode);
         }
     }
-
 
     public bool IsConnected =>
         hubConnection?.State == HubConnectionState.Connected;
 
     public async ValueTask DisposeAsync()
     {
-        if (hubConnection is not null)
-        {
-            await hubConnection.DisposeAsync();
-        }
+        //if (hubConnection is not null)
+        //{
+        //    await hubConnection.DisposeAsync();
+        //}
     }
 }
