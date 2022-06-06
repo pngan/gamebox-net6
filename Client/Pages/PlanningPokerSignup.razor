@@ -1,5 +1,5 @@
 ﻿@page "/planningpoker/signup"
-@page "/planningpoker/signup/{gamecode}"
+@page "/planningpoker/signup/{Gamecode}"
 
 @using Microsoft.AspNetCore.SignalR.Client;
 @using System.Text.RegularExpressions;
@@ -119,8 +119,8 @@ label.game-code {
     private async Task GotoSendMessage() => await Send();
     private async Task GotoSendGameInfo() => await SendGameInfoAsync();
     private async Task GotoJoinGame()
-    {   
-                if (hubConnection is not null)
+    {
+        if (hubConnection is not null)
         {
             await hubConnection.SendAsync("JoinGame", _gameCode, _gameCode);
         }
@@ -177,7 +177,7 @@ label.game-code {
                 string json = System.Text.Json.JsonSerializer.Serialize(gameInfo);
                 var content = new StringContent(json, System.Text.Encoding.UTF8, "text/plain");
                 await Http.PostAsync($"GameCoordinator/{Gamecode}", content);
-                //await BroadcastGameInfoAsync();
+                await SendGameInfoAsync();
             }
             catch (Exception ex)
             {
@@ -209,8 +209,6 @@ label.game-code {
         });
 
         await hubConnection.StartAsync();
-
-
     }
 
     private async Task SendGameInfoAsync()
@@ -225,10 +223,10 @@ label.game-code {
 
     public async ValueTask DisposeAsync()
     {
-        //if (hubConnection is not null)
-        //{
-        //    await hubConnection.DisposeAsync();
-        //}
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
     }
 
     

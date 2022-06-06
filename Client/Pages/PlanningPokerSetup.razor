@@ -1,4 +1,4 @@
-﻿@page "/planningpoker/setup/{gamecode}"
+﻿@page "/planningpoker/setup/{Gamecode}"
 
 @using Microsoft.AspNetCore.SignalR.Client
 @using System.Text.RegularExpressions;
@@ -91,21 +91,32 @@ label.game-code {
 
     protected override async Task OnParametersSetAsync()
     {
-        RefreshGameInfoAsync();
+        await JoinGame();
+        await RefreshGameInfoAsync();
     }
 
 
-    private void RefreshGameInfoAsync()
+    private async Task RefreshGameInfoAsync()
     {
         PokerPlanningGameInfo? gameInfo = null;
-        //try
-        //{
-        //    gameInfo = await Http.GetFromJsonAsync<PokerPlanningGameInfo>($"GameCoordinator/{Gamecode}");
-        //}
-        //catch { }
+        try
+        {
+            gameInfo = await Http.GetFromJsonAsync<PokerPlanningGameInfo>($"GameCoordinator/{Gamecode}");
+        }
+        catch { }
 
-        //foreach (var player in gameInfo.Players)
-        //    Players.Add(player);
+        Players.Clear();
+
+        foreach (var player in gameInfo.Players)
+            Players.Add(player);
+    }
+    
+    private async Task JoinGame()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("JoinGame", _gameCode, _gameCode);
+        }
     }
 
 
@@ -115,17 +126,9 @@ label.game-code {
             .WithUrl(NavigationManager.ToAbsoluteUri("/planningpokerhub"))
             .Build();
 
-            
-        hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
+        hubConnection.On<string, string>("ReceiveGameInfo", async (gameCode, userName) =>
         {
-            var encodedMsg = $"{user}: {message}";
-            messages.Add(encodedMsg);
-            StateHasChanged();
-        });
-
-        hubConnection.On<string>("BroadcastGameInfo", (value) =>
-        {
-            RefreshGameInfoAsync();
+            await RefreshGameInfoAsync();
             StateHasChanged();
         });
 
@@ -145,9 +148,9 @@ label.game-code {
 
     public async ValueTask DisposeAsync()
     {
-        //if (hubConnection is not null)
-        //{
-        //    await hubConnection.DisposeAsync();
-        //}
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
     }
 }
