@@ -38,12 +38,13 @@ namespace gamebox.Server.Controllers
 
         [HttpPost]
         [Route("{gamecode}")]
-        public void AddOrUpdateGameInfo(string gamecode)
+        public async Task AddOrUpdateGameInfoAsync(string gameCode)
         {
-            var value = Request.BodyReader.ReadAsync().Result;
-
+            var value = await Request.BodyReader.ReadAsync();
             var buffer = value.Buffer;
-            var gameInfo =System.Text.Encoding.Default.GetString(buffer.FirstSpan);
+            var gameInfo = System.Text.Encoding.Default.GetString(buffer.FirstSpan);
+
+            _gameRepository.AddorUpdateGameInfo(gameCode, gameInfo);
         }
 
 

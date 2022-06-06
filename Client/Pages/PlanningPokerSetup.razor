@@ -1,7 +1,10 @@
-﻿@page "/planningpokergame/{gamecode}/{username}"
+﻿@page "/planningpoker/setup/{gamecode}"
 
 @using Microsoft.AspNetCore.SignalR.Client
 @using System.Text.RegularExpressions;
+@using gamebox.Client.Models;
+@using System.Text.Json;
+
 @inject NavigationManager NavigationManager
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject HttpClient Http
@@ -9,7 +12,7 @@
 
 @implements IAsyncDisposable
 
-<PageTitle>Planning Poker!</PageTitle>
+<PageTitle>Setting Up Planning Poker</PageTitle>
 <style>
     
 
@@ -43,12 +46,19 @@ label.game-code {
 <div class="planning-poker-container">
 
 <div class="page-banner">
-    Planning Poker is in Progress
+    Setting Up Planning Poker
 </div>
 <div class="form-group">
 
-    <label>Hello  </label>
-    <label class="game-code">@(Username)</label>
+
+<ul>
+    @foreach (var player in Players)
+    {
+        <li>@player</li>
+    }
+</ul>
+
+
 </div>
 </div>
 
@@ -57,10 +67,8 @@ label.game-code {
     private List<string> messages = new List<string>();
     private string? messageInput;
     private string? _gameCode;
-    const int MAX_PLAYERS = 2;
-    private string errorGameCodeWrongFormat  = "Use 1 letter game code.";
-    private string errorGameCodeDoesNotExist =  "Game does not exist.";
-    private string errorGameIsFull =  "Sorry, game is full";
+    private PokerPlanningGameInfo gameInfo = new();
+    private List<string> Players = new List<string> { "hi", "there" };
 
     [Parameter]
     public string? Gamecode
@@ -68,10 +76,6 @@ label.game-code {
         get => _gameCode;
         set => _gameCode = value?.ToUpper();
     }
-
-    [Parameter]
-    public string? Username { get; set; }
-
 
     const string PLAYER_NAME_STORAGE_KEY = "gamebox.playername";
 
@@ -87,19 +91,16 @@ label.game-code {
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Gamecode == "NEWGAME")
+
+        PokerPlanningGameInfo? gameInfo = null;
+        try
         {
-            Gamecode = await Http.GetStringAsync("GameCoordinator/gamecode");
-            //await JoinGame();
+            gameInfo = await Http.GetFromJsonAsync<PokerPlanningGameInfo>($"GameCoordinator/{Gamecode}");
         }
-        else
-        {
-            if (!Regex.IsMatch(Gamecode!, "^[A-Z]{1}$"))
-            {
-                var navoptions = new NavigationOptions();
-                NavigationManager.NavigateTo( Uri.EscapeDataString($"{errorGameCodeWrongFormat}"));
-            }
-        }
+        catch { }
+
+        foreach (var player in gameInfo.Players)
+            Players.Add(player);
     }
 
     protected override async Task OnInitializedAsync()
@@ -116,6 +117,8 @@ label.game-code {
         });
 
         await hubConnection.StartAsync();
+
+
     }
 
     private async Task Send()
@@ -123,14 +126,6 @@ label.game-code {
         if (hubConnection is not null)
         {
             await hubConnection.SendAsync("SendMessage", _playerName, messageInput, _gameCode);
-        }
-    }
-
-    private async Task JoinGame()
-    {
-        if (hubConnection is not null)
-        {
-            await hubConnection.SendAsync("JoinGame", _playerName, Gamecode);
         }
     }
 
