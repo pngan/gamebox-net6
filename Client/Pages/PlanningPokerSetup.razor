@@ -6,7 +6,7 @@
 @using System.Text.Json;
 
 @inject NavigationManager NavigationManager
-@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject Blazored.SessionStorage.ISessionStorageService SessionStorage
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
 
@@ -50,7 +50,10 @@ label.game-code {
 </div>
 <div class="form-group">
 
-
+ <div class="form-group">
+    <label>Hello </label>
+    <label>@(PlayerName)</label>
+</div>
 <ul>
     @foreach (var player in Players)
     {
@@ -78,16 +81,11 @@ label.game-code {
     }
 
     const string PLAYER_NAME_STORAGE_KEY = "gamebox.playername";
+    const string PLAYER_TYPE_STORAGE_KEY = "gamebox.playertype";
+    enum PlayerType {PLAYER, SPECTATOR};
 
-    private string _playerName = string.Empty;
-    private string PlayerName { 
-        get => _playerName;
-        set
-        {
-            _playerName = value;
-            LocalStorage.SetItemAsync(PLAYER_NAME_STORAGE_KEY, PlayerName);
-        }
-    }
+    private string? _playerName;
+    private string PlayerName { get => _playerName!; }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -133,6 +131,9 @@ label.game-code {
         });
 
         await hubConnection.StartAsync();
+
+        // Get the player name
+        _playerName = await SessionStorage.GetItemAsStringAsync(PLAYER_NAME_STORAGE_KEY);
     }
 
     private async Task BroadcastGameInfoAsync()

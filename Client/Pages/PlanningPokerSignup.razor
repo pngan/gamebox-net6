@@ -7,7 +7,7 @@
 @using System.Text.Json;
 
 @inject NavigationManager NavigationManager
-@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject Blazored.SessionStorage.ISessionStorageService SessionStorage
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
 
@@ -100,19 +100,18 @@ label.game-code {
 
 
     const string PLAYER_NAME_STORAGE_KEY = "gamebox.playername";
+    const string PLAYER_TYPE_STORAGE_KEY = "gamebox.playertype";
     enum PlayerType {PLAYER, SPECTATOR};
 
-    //private string _playerName = "I like to play";
-    //private string PlayerName { 
-    //    get => _playerName;
-    //    set
-    //    {
-    //        _playerName = value;
-    //        LocalStorage.SetItemAsync(PLAYER_NAME_STORAGE_KEY, PlayerName);
-    //    }
-    //}
-
-    private string PlayerName { get; set; }
+    private string _playerName = "";
+    private string PlayerName { 
+        get => _playerName;
+        set
+        {
+            _playerName = value;
+            SessionStorage.SetItemAsync(PLAYER_NAME_STORAGE_KEY, PlayerName);
+        }
+    }
 
     private async Task GotoJoinAsPlayer() => await JoinGame(PlayerType.PLAYER);
     private async Task GotoJoinAsSpectator() => await JoinGame(PlayerType.SPECTATOR);
