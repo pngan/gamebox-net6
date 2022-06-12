@@ -57,7 +57,7 @@ label.game-code {
 <div class="form-group">
     <label>
         What is your Name?
-        <input @bind="PlayerName"  />
+        <input @bind="PlayerName" @bind:event="oninput" />
     </label>
 </div>
 <ul id="messagesList">
