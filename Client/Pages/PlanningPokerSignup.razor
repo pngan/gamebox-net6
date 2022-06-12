@@ -59,6 +59,12 @@ label.game-code {
         What is your Name?
         <input @bind="PlayerName" @bind:event="oninput" />
     </label>
+    @if (!IsNameUnique)
+    {
+        <div>
+            <label>A player with that name already exists. Choose a different name.</label>
+        </div>
+    }
 </div>
 <ul id="messagesList">
     @foreach (var message in messages)
@@ -89,7 +95,7 @@ label.game-code {
     protected bool IsJoinDisabled {
         get => string.IsNullOrWhiteSpace(PlayerName);
     }
-    
+
     private List<string> messages = new List<string>();
     [Parameter]
     public string? Gamecode
@@ -97,6 +103,12 @@ label.game-code {
         get => _gameCode;
         set => _gameCode = value?.ToUpper();
     }
+
+    private bool IsNameUnique
+    {
+        get;
+        set;
+    } = true;
 
 
     const string PLAYER_NAME_STORAGE_KEY = "gamebox.playername";
@@ -110,6 +122,7 @@ label.game-code {
         {
             _playerName = value;
             SessionStorage.SetItemAsync(PLAYER_NAME_STORAGE_KEY, PlayerName);
+            IsNameUnique = true;
         }
     }
 
@@ -184,6 +197,11 @@ label.game-code {
             }
             NavigationManager.NavigateTo($"planningpoker/setup/{_gameCode}");
         }
+        else
+        {
+            IsNameUnique = false;
+        }
+
     }
     
     protected override async Task OnInitializedAsync()
