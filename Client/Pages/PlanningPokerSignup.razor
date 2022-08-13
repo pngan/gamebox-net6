@@ -121,7 +121,7 @@ label.game-code {
         set
         {
             _playerName = value;
-            SessionStorage.SetItemAsync(PLAYER_NAME_STORAGE_KEY, PlayerName);
+
             IsNameUnique = true;
         }
     }
@@ -166,6 +166,16 @@ label.game-code {
         if (gameInfo == null)
             gameInfo = new PokerPlanningGameInfo();
 
+        // If current Player is different from the previous player in session, remove old player
+        // and replace with new player
+        var previousPlayer = await SessionStorage.GetItemAsStringAsync(PLAYER_NAME_STORAGE_KEY);
+        if (string.Compare(previousPlayer, PlayerName, StringComparison.InvariantCultureIgnoreCase) != 0)
+        {
+            gameInfo.Players.Remove(previousPlayer);
+            gameInfo.Spectators.Remove(previousPlayer);
+            await SessionStorage.SetItemAsync(PLAYER_NAME_STORAGE_KEY, PlayerName);
+        }
+
         // Return with error if game is full
         if (playerType == PlayerType.PLAYER && gameInfo.Players.Count >= MAX_PLAYERS)
         {
@@ -173,7 +183,7 @@ label.game-code {
         }
 
         // Add Player or Spectator, only if they haven't been added previously
-        if (gameInfo.Players.All(p => string.Compare(p, PlayerName, StringComparison.InvariantCultureIgnoreCase) != 0)
+        if (   gameInfo.Players.All(   p => string.Compare(p, PlayerName, StringComparison.InvariantCultureIgnoreCase) != 0)
             && gameInfo.Spectators.All(p => string.Compare(p, PlayerName, StringComparison.InvariantCultureIgnoreCase) != 0))
         {
             if (playerType == PlayerType.PLAYER)
@@ -195,32 +205,27 @@ label.game-code {
             {
 
             }
-            NavigationManager.NavigateTo($"planningpoker/setup/{_gameCode}");
         }
-        else
-        {
-            IsNameUnique = false;
-        }
-
+        NavigationManager.NavigateTo($"planningpoker/setup/{_gameCode}");
     }
-    
+
     protected override async Task OnInitializedAsync()
     {
         hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/planningpokerhub"))
             .Build();
-            
-            
+
+
         hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
         {
-           var encodedMsg = $"{user}: {message}";
+            var encodedMsg = $"{user}: {message}";
             messages.Add(encodedMsg);
             StateHasChanged();
         });
-            
+
         hubConnection.On<string, string>("ReceiveGameInfo", (gameCode, userName) =>
         {
-           var encodedMsg = $"{gameCode}: {userName}";
+            var encodedMsg = $"{gameCode}: {userName}";
             messages.Add(encodedMsg);
             StateHasChanged();
         });
@@ -246,7 +251,7 @@ label.game-code {
         }
     }
 
-    
+
     private async Task Send()
     {
         if (hubConnection is not null)
