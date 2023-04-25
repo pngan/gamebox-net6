@@ -1,6 +1,7 @@
-﻿@page "/planningpoker/setup/{Gamecode}"
+﻿@page "/planningpoker"
+@page "/planningpoker/{Gamecode}"
 
-@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.AspNetCore.SignalR.Client;
 @using System.Text.RegularExpressions;
 @using gamebox.Client.Models;
 @using System.Text.Json;
@@ -12,9 +13,10 @@
 
 @implements IAsyncDisposable
 
-<PageTitle>Setting Up Planning Poker</PageTitle>
-
+<PageTitle>Planning Poker!</PageTitle>
 <style>
+    
+
 div.page-banner
 {
     color: rebeccapurple;
@@ -45,13 +47,12 @@ label.game-code {
 <div class="planning-poker-container">
 
 <div class="page-banner">
-    Setting Up Planning Poker
+    Planning Poker
 </div>
 <div class="form-group">
 
- <div class="form-group">
-    <label>Hello </label>
-    <label>@(PlayerName)</label>
+    <label>Game Code: </label>
+    <label class="game-code">@(_gameCode)</label>
 </div>
 <ul>
     @foreach (var player in Players)
@@ -60,16 +61,12 @@ label.game-code {
     }
 </ul>
 
-        <button class="grid-item" @onclick="GotoPlanningPokerPlay" disabled="@IsPlayPlanningPokerDisabled">Start Planning Poker</button>
-</div>
+
 </div>
 
 @code {
     private HubConnection? hubConnection;
-    private List<string> messages = new List<string>();
-    private string? messageInput;
     private string? _gameCode;
-    private PokerPlanningGameInfo gameInfo = new();
     private List<string> Players = new();
 
     [Parameter]
@@ -78,37 +75,18 @@ label.game-code {
         get => _gameCode;
         set => _gameCode = value?.ToUpper();
     }
-
     const string PLAYER_NAME_STORAGE_KEY = "gamebox.playername";
     const string PLAYER_TYPE_STORAGE_KEY = "gamebox.playertype";
     enum PlayerType {PLAYER, SPECTATOR};
 
-    private string? _playerName;
-    private string PlayerName { get => _playerName!; }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        await JoinGame();
-        await RefreshGameInfoAsync();
-    }
-    private async Task GotoPlanningPokerPlay()
-    {
-        if (hubConnection is not null)
+    private string _playerName = "";
+    private string PlayerName { 
+        get => _playerName;
+        set
         {
-            await hubConnection.SendAsync("StartGame", _gameCode);
+            _playerName = value;
         }
     }
-
-    protected bool IsPlayPlanningPokerDisabled
-    {
-        get => !Players.Any();
-    }
-
-    private void PlayPlanningPoker()
-    {
-        NavigationManager.NavigateTo($"planningpoker/{_gameCode}");
-    }
-
 
     private async Task RefreshGameInfoAsync()
     {
@@ -125,12 +103,16 @@ label.game-code {
             Players.Add(player);
     }
 
-    private async Task JoinGame()
+    protected override async Task OnParametersSetAsync()
     {
-        if (hubConnection is not null)
+        PokerPlanningGameInfo? gameInfo = null;
+        try
         {
-            await hubConnection.SendAsync("JoinGame", _gameCode, _gameCode);
+            gameInfo = await Http.GetFromJsonAsync<PokerPlanningGameInfo>($"GameCoordinator/{Gamecode}");
         }
+        catch { }
+
+        Players = gameInfo.Players;
     }
 
 
@@ -140,48 +122,47 @@ label.game-code {
             .WithUrl(NavigationManager.ToAbsoluteUri("/planningpokerhub"))
             .Build();
 
+
         hubConnection.On<string, string>("ReceiveGameInfo", async (gameCode, userName) =>
         {
             await RefreshGameInfoAsync();
             StateHasChanged();
         });
+        //hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
+        //{
+        //    var encodedMsg = $"{user}: {message}";
+        //    messages.Add(encodedMsg);
+        //    StateHasChanged();
+        //});
 
-        hubConnection.On<string>("StartGame", async (gameCode) =>
-        {
-            await Task.CompletedTask;
-            PlayPlanningPoker();
-        });
 
         await hubConnection.StartAsync();
-
-        // Get the player name
-        _playerName = await SessionStorage.GetItemAsStringAsync(PLAYER_NAME_STORAGE_KEY);
     }
-    
-    private async Task StartGameAsync()
+
+    private async Task SendGameInfoAsync()
     {
         if (hubConnection is not null)
         {
-            await hubConnection.SendAsync("StartGame", _gameCode);
+            await hubConnection.SendAsync("BroadcastGameInfo", _gameCode, PlayerName);
         }
     }
 
-    private async Task BroadcastGameInfoAsync()
-    {
-        if (hubConnection is not null)
-        {
-            await hubConnection.SendAsync("BroadcastGameInfo", _gameCode);
-        }
-    }
-
-    public bool IsConnected =>
-        hubConnection?.State == HubConnectionState.Connected;
+    public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;    
 
     public async ValueTask DisposeAsync()
     {
         if (hubConnection is not null)
         {
             await hubConnection.DisposeAsync();
+        }
+    }
+
+
+    private async Task Send()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("SendMessage", PlayerName, hubConnection.ConnectionId);
         }
     }
 }
